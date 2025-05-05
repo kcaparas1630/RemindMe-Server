@@ -1,35 +1,25 @@
-FROM node:20.16.0
+FROM node:20.16.0-alpine
 
 WORKDIR /app/
 
-# Install dependencies first (better layer caching)
+# Copy package files for dependencies
 COPY package*.json ./
-RUN npm install
 
-# Create logs directory with correct permissions
-RUN mkdir -p /app/logs
+# Install ALL dependencies including dev dependencies
+RUN npm install && \
+    # Create logs directory
+    mkdir -p /app/logs
 
-# Copy the rest of the application
+# Copy application code
 COPY . ./
 
-# Generate prisma schema
-RUN npx prisma generate 
+# Generate prisma client
+RUN npx prisma generate
 
-# Build the application
 RUN npm run build
 
+# Set environment variables
+ENV NODE_ENV=development
 
-# Set up user and permissions
-RUN groupadd -r backendgroup && \
-    useradd -r -g backendgroup -m backenduser && \
-    chown -R backenduser:backendgroup /app && \
-    chmod 755 /app && \
-    chmod 755 /app/logs
-
-LABEL maintainer="Kent Caparas<kentcaparas12@gmail.com>"
-LABEL description="Docker image to run Task command line backend"
-LABEL version="1.0"
-
-USER backenduser
-
-CMD ["npm", "run", "serve", "--no-update-notifier", "--max-old-space-size=50"]
+# Use nodemon or ts-node-dev for hot reloading during development
+CMD ["npm", "run", "dev"]
