@@ -1,0 +1,225 @@
+openapi: 3.0.0
+info: 
+  title: Task Dashboard API
+  description: |
+    API to query users, tasks, and continuously run health checks to ensure container is healthy,
+    also adds data into database.
+servers:
+  - url: http://localhost:3000
+    description: Server bind locally into port 3000.
+paths:
+  /user:
+    get:
+      tags:
+        - Users
+      summary: Queries Users from the database
+      operationId: getAllUsers
+      responses:
+        "200":
+          description: Successful response with user list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      tags:
+        - Users
+      summary: User Registration and Login
+      operationId: Handles user registration and login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/UserRegistration'
+                - $ref: '#/components/schemas/UserLogin'
+      resopnses: 
+        "201":
+          description: User Sucessfully Registered
+        "200":
+          description: Login Sucessful
+          content:
+            schema:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      description: JWT authentication token
+        "401":
+          description: Invalid Credentials 
+        "403":
+          description: User Already Exists. Forbidden.
+        "500":
+          description: Internal Server Error.
+  /user/:id:
+    get:
+      tags:
+        - Users
+      summary: Get User by ID
+      operationId: getUserById
+      requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              userId:
+                type: string
+            required:
+              - userId
+      responses:
+        "200":
+          description: User found succesfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        "400":
+          description: User ID is not provided. Bad Request.
+        "500":
+          description: Failed to fetch user. Internal Server Error
+  /task:
+    get:
+      tags:
+        - Task
+      summary: Get All Messages
+      operationId: getAllTask
+      responses:
+        "200":
+          description: Successful response with task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    post:
+      tags:
+        - Task
+      summary: Add a new task
+      operationId: postTask
+      responses:
+        "201":
+          description: Task has been added
+        "401":
+          description: Unauthorized
+        "403":
+          description: Task name already exists. Forbidden
+        "500":
+          description: Internal server error
+  /task/:name:
+    get:
+      tags:
+        - Task
+      summary: Get task by name
+      operationId: getTaskByName
+      requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              userId:
+                type: string
+            required:
+              - taskName
+      responses:
+      "200":
+        description: Task found succesfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+  /health:
+    description: API Health
+    get:
+      tags:
+        - Health
+      summary: Health status
+      operationId: checkHealth
+      description: |
+        If the API is healthy, respond to request
+        with a healthy status message
+      responses:
+        '200':
+          description: Task API is healthy
+        '500':
+          description: Internal server error
+components:
+  schemas:
+    User:
+      type: array
+      items:
+        type: object
+        properties:
+          firstName:
+            type: string
+          lastName:
+            type: string
+          userName:
+            type: string
+          userPassword:
+            type: string
+            format: password
+          userEmail:
+            type: string
+            format: email
+    
+    UserRegistration:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - userName
+        - userPassword
+        - userEmail
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        userName:
+          type: string
+        userPassword:
+          type: string
+          format: password
+        userEmail:
+          type: string
+          format: email
+    
+    UserLogin:
+      type: object
+      required:
+        - userName
+        - userPassword
+      properties:
+        userName:
+          type: string
+        userPassword:
+          type: string
+          format: password
+
+    Task:
+      type: array
+      items:
+        type: object
+        properties:
+          taskName:
+            type: string
+          taskDescription:
+            type: string
+          taskProgress:
+            type: string
+            oneOf:
+              - NOTSTARTED
+              - STARTED
+              - COMPLETED
+          taskDueDate:
+            type: Date
